@@ -1,0 +1,14 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rsync-filter"
+description = "A python module for parsing .rsync-filter files"
+version = "2024.2.28.dev"
+authors = [
+  {name = "Preston Hunt", email = "me@prestonhunt.com"},
+]
+maintainers = [
+  {name = "Preston Hunt", email = "me@prestonhunt.com"},
+]
