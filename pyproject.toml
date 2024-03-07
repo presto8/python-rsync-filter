@@ -6,6 +6,7 @@ build-backend = "hatchling.build"
 name = "rsync-filter"
 description = "A python module for parsing .rsync-filter files"
 version = "2024.2.28.dev"
+readme = {file = "README.adoc", content-type = "text/markdown" }
 authors = [
   {name = "Preston Hunt", email = "me@prestonhunt.com"},
 ]

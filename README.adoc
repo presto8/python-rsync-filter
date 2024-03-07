@@ -1,0 +1,3 @@
+= python-rsync-filter
+
+A Python module that implements the rsync-filter specification.
