@@ -23,3 +23,6 @@ maintainers = [
 
 [project.urls]
 Repository = "https://github.com/presto8/python-rsync-filter"
+
+[tool.hatch.build.targets.wheel]
+packages = ["rsyncfilter"]
