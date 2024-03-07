@@ -1,6 +1,6 @@
 { lib, python3Packages }:
 with python3Packages;
-buildPythonPackage {
+buildPythonPackage rec {
   pname = "python-rsync-filter";
   version = "2024.1.9";
   format = "pyproject";
