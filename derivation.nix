@@ -17,7 +17,7 @@ buildPythonPackage rec {
   meta = with lib; {
     description = pname;
     homepage = "https://github.com/presto8/python-rsync-filter";
-    license = licenses.mit;
+    license = licenses.asl20;
     maintainers = with maintainers; [ presto8 ];
   };
 }
