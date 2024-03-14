@@ -1,0 +1,13 @@
+= Filter Rules
+
+The rsync man page has a section on FILTER RULES:
+
+* Any unmatched file/dir is included by default
+* Exclude rules cause matching files/dirs to be left out
+* Include rules are used to override exclude rules that are matching too many files
+* Short-circuit evaluation: First matching rule takes effect. Include overrides must occur prior to the exclude rule it is overriding.
+* Excluded a dir means the dir is not scanned at all. All files/subdirs in the parent dir are ignored.
+* To include a/path/deep/down.txt make sure a/path and a/path/deep are not excluded, else down.txt will never be found.
+* Trailing whitespace is not trimmed in filter files ("foo " will not match "foo") (TODO: print a warning if this is encountered)
+* To match a directory only and not a file, add a slash to the entry
+* Wildcard PATTERN MATCHING RULES are supported.
