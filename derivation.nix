@@ -1,4 +1,8 @@
-{ lib, python3Packages }:
+{ lib
+, python3Packages
+# , pytestCheckHook
+}:
+
 with python3Packages;
 buildPythonPackage rec {
   pname = "python-rsync-filter";
@@ -12,6 +16,11 @@ buildPythonPackage rec {
   ];
 
   propagatedBuildInputs = [
+    pytest
+  ];
+
+  nativeCheckInputs = [
+    #pytestCheckHook
   ];
 
   meta = with lib; {
