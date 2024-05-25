@@ -1,6 +1,5 @@
 { lib
 , python3Packages
-# , pytestCheckHook
 }:
 
 with python3Packages;
@@ -20,7 +19,7 @@ buildPythonPackage rec {
   ];
 
   nativeCheckInputs = [
-    #pytestCheckHook
+    pytestCheckHook
   ];
 
   meta = with lib; {
