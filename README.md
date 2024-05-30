@@ -1,4 +1,4 @@
-# python-rsync-filter
+# rsyncfilter
 
 A Python module that implements rsync's sending-side rsync-filter specification.
 See the "FILTER RULES" section of "man rsync".
