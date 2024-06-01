@@ -44,6 +44,7 @@ single space or an underscore (_). Any additional spaces and/or underscores are
 considered to be a part of the pattern name.
 """
 
+
 @dataclass
 class Rule:
     basepath: str
@@ -52,40 +53,79 @@ class Rule:
     relpath: str | None  # either path or pattern is set, not both
     pattern: str | None  # contains *?[
 
+    @property
+    def dir_only(self):
+        return self.relpath.endswith('/')
+
+    @property
+    def anchor_only(self):
+        return self.relpath.startswith('/')
+
+    @property
+    def parts(self):
+        return self.relpath.removeprefix('/').removesuffix('/').split('/')
+
+    def is_a_subset_of(self, candparts) -> bool:
+        n = len(self.parts)
+        for i in range(0, len(candparts), n):
+            candrange = candparts[i:i + n]
+            if self.parts == candrange:
+                return True
+        return False
+
+    @property
+    def relpath_clean(self):
+        return '/'.join(self.parts)
+
 
 class RsyncFilter:
     SHORTS_RE = re.compile(r"[-+.:HSPR!](,?[/!Csrpx])?[ _](.+)")
 
-    def __init__(self, top_path='.'):
+    def __init__(self, top_path='.', explain_mode=False):
         self.rules: list[Rule] = []
         self.top_path = top_path
         self._find_rsync_filter_file_up(top_path)
+        self.explain_mode = explain_mode
 
     def scandir(self, path=None, follow_symlinks=False) -> Iterator[os.DirEntry]:
         path = path or self.top_path
         # TODO raise exception if path is not part of top_path
         for entry in os.scandir(path):
-            if self._is_included(entry):
+            is_included = self._is_included(entry)
+            if is_included:
                 if entry.is_dir(follow_symlinks=follow_symlinks):
                     yield from self.scandir(entry.path, follow_symlinks=follow_symlinks)
-                else:
-                    yield entry
+                yield entry
 
     def _is_included(self, entry: os.DirEntry) -> bool:
         for rule in self.rules:
-            parts = entry.path.split(rule.basepath)
-            if parts[0] != '':  # entry does not start with basepath
+            basepath, relpath = entry.path.split(rule.basepath)
+            if basepath != '':
+                self.explain(f"candidate {entry.path} does not start with rule basepath: {rule.basepath}")
                 continue
-            relpath = parts[1]
-            if relpath[0] == '/':
-                relpath = relpath[1:]
-            if entry.is_dir():  # always terminate dirs in / so rules work correctly
-                relpath += '/'
+
+            if rule.dir_only:
+                if entry.is_symlink():
+                    self.explain(f"rule is dir only but candidate {entry.path} is a symlink")
+                    continue
+                if not entry.is_dir():
+                    self.explain(f"rule is dir only but candidate {entry.path} is not a directory")
+                    continue
+
+            entryparts = relpath.removeprefix('/').split('/')
+            if rule.anchor_only and entryparts[0] != rule.parts[0]:
+                self.explain(f"rule is an anchor but candidate {entry.path} is not at the top of the basepath: {rule.basepath}")
+                continue
+
             if rule.prefix == '+':
                 if relpath == rule.relpath:
                     return True
+                if relpath == rule.relpath.removeprefix('/'):
+                    return True
             elif rule.prefix == '-':
                 if rule.relpath == '*':
+                    return False
+                if rule.is_a_subset_of(entryparts):
                     return False
             else:
                 raise RsyncFilterException("unsupported prefix:", rule.prefix)
@@ -134,3 +174,7 @@ Rsync  chooses between doing a simple string match and wildcard matching by chec
     def path_is_decendent(self, path) -> bool:
         "Path is a descendent of top_path."
         pass
+
+    def explain(self, *args):
+        if self.explain_mode:
+            print(*args)
