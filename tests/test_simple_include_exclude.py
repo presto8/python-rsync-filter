@@ -1,9 +1,3 @@
-import os
-
-from pathlib import Path
-from types import SimpleNamespace
-
-from rsyncfilter import RsyncFilter
 from .utils import rf_test
 
 
@@ -53,6 +47,7 @@ it contains:
     rsync -ai -f'- zzz.txt' x host:/tmp/
 """
 
+
 def test_exclude_one_file(tmp_path):
     paths = "a b c".split()
     filter_rules = ["- b"]
@@ -68,3 +63,11 @@ def test_exclude_one_dir(tmp_path):
     assert len(result.matches) == 4  # should be a, a/1, c, and .rsync-filter
     assert 'b' not in result.names
     assert '2' not in result.names
+
+
+def test_exclude_all_include_one(tmp_path):
+    paths = "a/1 b/2 c".split()
+    filter_rules = ["+ .rsync-filter", "- *"]
+    result = rf_test(tmp_path, filter_rules, paths)
+    assert len(result.matches) == 1
+    assert '.rsync-filter' in result.names

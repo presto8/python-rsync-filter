@@ -51,7 +51,11 @@ class Rule:
     prefix: str  # -+.:HSPR!
     modifiers: str | None  # /!Csrpx
     relpath: str | None  # either path or pattern is set, not both
-    pattern: str | None  # contains *?[
+
+    @property
+    def is_pattern(self):
+        # contains *?[
+        return any([self.relpath.contains(x) for x in "*?[".split()])
 
     @property
     def dir_only(self):
@@ -99,8 +103,8 @@ class RsyncFilter:
 
     def _is_included(self, entry: os.DirEntry) -> bool:
         for rule in self.rules:
-            basepath, relpath = entry.path.split(rule.basepath)
-            if basepath != '':
+            empty, basepath, relpath = entry.path.partition(rule.basepath)
+            if basepath != rule.basepath or empty != "":
                 self.explain(f"candidate {entry.path} does not start with rule basepath: {rule.basepath}")
                 continue
 
@@ -122,6 +126,8 @@ class RsyncFilter:
                     return True
                 if relpath == rule.relpath.removeprefix('/'):
                     return True
+                if rule.is_a_subset_of(entryparts):
+                    return True
             elif rule.prefix == '-':
                 if rule.relpath == '*':
                     return False
@@ -141,7 +147,7 @@ class RsyncFilter:
             if line[0] == '#':
                 continue
             parsed = self._parse_filter_line(line)
-            new_rule = Rule(basepath=basepath, prefix=parsed.prefix, modifiers=parsed.modifiers, relpath=parsed.relpath, pattern=parsed.pattern)
+            new_rule = Rule(basepath=basepath, prefix=parsed.prefix, modifiers=parsed.modifiers, relpath=parsed.relpath)
             self.rules.append(new_rule)
 
     def _parse_filter_line(self, line) -> SimpleNamespace:
@@ -149,7 +155,7 @@ class RsyncFilter:
         shorts_re = re.compile(r"([-+.:HSPR!])(,?[/!Csrpx])?[ _](.+)\n?")
         matches = shorts_re.match(line)
         if matches:
-            return SimpleNamespace(prefix=matches[1], modifiers=matches[2], relpath=matches[3], pattern=None)
+            return SimpleNamespace(prefix=matches[1], modifiers=matches[2], relpath=matches[3])
         # see if it's a long prefix
         first, sep, second = line.partition(' ')
         if sep != ' ':
