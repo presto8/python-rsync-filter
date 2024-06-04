@@ -1,3 +1,4 @@
+import fnmatch
 import os
 import re
 from dataclasses import dataclass
@@ -50,12 +51,12 @@ class Rule:
     basepath: str
     prefix: str  # -+.:HSPR!
     modifiers: str | None  # /!Csrpx
-    relpath: str | None  # either path or pattern is set, not both
+    relpath: str
 
     @property
     def is_pattern(self):
         # contains *?[
-        return any([self.relpath.contains(x) for x in "*?[".split()])
+        return self.relpath.strip("*?[") != self.relpath
 
     @property
     def dir_only(self):
@@ -122,6 +123,8 @@ class RsyncFilter:
                 continue
 
             if rule.prefix == '+':
+                if rule.is_pattern:
+                    return fnmatch.fnmatch(relpath, rule.relpath)
                 if relpath == rule.relpath:
                     return True
                 if relpath == rule.relpath.removeprefix('/'):
@@ -129,8 +132,8 @@ class RsyncFilter:
                 if rule.is_a_subset_of(entryparts):
                     return True
             elif rule.prefix == '-':
-                if rule.relpath == '*':
-                    return False
+                if rule.is_pattern:
+                    return not fnmatch.fnmatch(relpath, rule.relpath)
                 if rule.is_a_subset_of(entryparts):
                     return False
             else:
