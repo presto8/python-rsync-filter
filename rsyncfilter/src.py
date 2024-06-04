@@ -118,7 +118,7 @@ class RsyncFilter:
                     continue
 
             entryparts = relpath.removeprefix('/').split('/')
-            if rule.anchor_only and entryparts[0] != rule.parts[0]:
+            if rule.anchor_only and not rule.is_pattern and entryparts[0] != rule.parts[0]:
                 self.explain(f"rule is an anchor but candidate {entry.path} is not at the top of the basepath: {rule.basepath}")
                 continue
 
@@ -133,6 +133,7 @@ class RsyncFilter:
                     return True
             elif rule.prefix == '-':
                 if rule.is_pattern:
+                    print(rule, relpath)
                     return not fnmatch.fnmatch(relpath, rule.relpath)
                 if rule.is_a_subset_of(entryparts):
                     return False
