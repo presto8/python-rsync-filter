@@ -5,7 +5,7 @@
 with python3Packages;
 buildPythonPackage rec {
   pname = "python-rsync-filter";
-  version = "2024.1.9";
+  version = "2024.6.4";
   format = "pyproject";
 
   src = ./.;

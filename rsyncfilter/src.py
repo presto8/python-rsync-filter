@@ -1,4 +1,5 @@
 import fnmatch
+import inspect
 import os
 import re
 from dataclasses import dataclass
@@ -86,11 +87,11 @@ class Rule:
 class RsyncFilter:
     SHORTS_RE = re.compile(r"[-+.:HSPR!](,?[/!Csrpx])?[ _](.+)")
 
-    def __init__(self, top_path='.', explain_mode=False):
+    def __init__(self, top_path='.', explain_callback=False):
         self.rules: list[Rule] = []
         self.top_path = top_path
         self._find_rsync_filter_file_up(top_path)
-        self.explain_mode = explain_mode
+        self.explain_callback = explain_callback
 
     def scandir(self, path=None, follow_symlinks=False) -> Iterator[os.DirEntry]:
         path = path or self.top_path
@@ -118,23 +119,25 @@ class RsyncFilter:
                     continue
 
             entryparts = relpath.removeprefix('/').split('/')
-            if rule.anchor_only and entryparts[0] != rule.parts[0]:
+            if rule.anchor_only and not rule.is_pattern and entryparts[0] != rule.parts[0]:
                 self.explain(f"rule is an anchor but candidate {entry.path} is not at the top of the basepath: {rule.basepath}")
                 continue
 
             if rule.prefix == '+':
                 if rule.is_pattern:
-                    return fnmatch.fnmatch(relpath, rule.relpath)
-                if relpath == rule.relpath:
+                    if fnmatch.fnmatch(relpath, rule.relpath):
+                        return True
+                elif relpath == rule.relpath:
                     return True
-                if relpath == rule.relpath.removeprefix('/'):
+                elif relpath == rule.relpath.removeprefix('/'):
                     return True
-                if rule.is_a_subset_of(entryparts):
+                elif rule.is_a_subset_of(entryparts):
                     return True
             elif rule.prefix == '-':
                 if rule.is_pattern:
-                    return not fnmatch.fnmatch(relpath, rule.relpath)
-                if rule.is_a_subset_of(entryparts):
+                    if fnmatch.fnmatch(relpath, rule.relpath):
+                        return False
+                elif rule.is_a_subset_of(entryparts):
                     return False
             else:
                 raise RsyncFilterException("unsupported prefix:", rule.prefix)
@@ -185,5 +188,6 @@ Rsync  chooses between doing a simple string match and wildcard matching by chec
         pass
 
     def explain(self, *args):
-        if self.explain_mode:
-            print(*args)
+        if self.explain_callback:
+            caller = inspect.stack()[1]
+            self.explain_callback(f'<{caller.lineno}>', *args)

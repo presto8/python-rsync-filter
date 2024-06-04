@@ -71,3 +71,11 @@ def test_exclude_all_include_one(tmp_path):
     result = rf_test(tmp_path, filter_rules, paths)
     assert len(result.matches) == 1
     assert '.rsync-filter' in result.names
+
+
+def test_exclude_depth(tmp_path):
+    paths = "__pycache__ a/__pycache__/foo.pyc a/b/c/d/e/__pycache__/".split()
+    filter_rules = ["- *.pyc", "- __pycache__"]
+    result = rf_test(tmp_path, filter_rules, paths)
+    assert len(result.matches) == len("a b c d e .rsync-filter".split())
+    assert '__pycache__' not in result.names
