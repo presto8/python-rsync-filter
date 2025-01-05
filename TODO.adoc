@@ -1,2 +1,0 @@
-- Print a warning if trailing whitespace is encountered in an ignore file that otherwise would have matched a file
-- Explain mode that tells why files are being excluded or included
